@@ -125,7 +125,7 @@ fn is_video_resolution(input: &str) -> bool {
 }
 
 fn parse_video_resolution<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>) {
-    let mut found = false;
+    let mut found = results.iter().any(|e| e.kind == ElementKind::VideoResolution);
     for token in tokens
         .iter_mut()
         .filter(|t| t.is_free() && is_video_resolution(t.value))
