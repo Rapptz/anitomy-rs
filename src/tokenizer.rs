@@ -456,17 +456,17 @@ pub(crate) enum KeepDelimiters {
 
 /// Combines and creates a string from the given tokens
 pub(crate) fn combine_tokens(tokens: &[Token<'_>], keep: KeepDelimiters) -> String {
-    let has_single_delimiter = tokens.iter().filter(|t| t.is_delimiter()).count() == 1;
-    let has_spaces = tokens
+    let delimiters = tokens
         .iter()
         .filter(|t| t.is_delimiter())
-        .filter_map(|x| x.value.chars().next())
-        .any(is_space);
-    let has_underscores = tokens
-        .iter()
-        .filter(|t| t.is_delimiter())
-        .filter_map(|x| x.value.chars().next())
-        .any(|x| x == '_');
+        .filter_map(|t| t.value.chars().next())
+        .collect::<Vec<_>>();
+    let has_single_delimiter = delimiters
+        .first()
+        .map(|f| delimiters.iter().all(|x| x == f))
+        .unwrap_or(false);
+    let has_spaces = delimiters.iter().copied().any(is_space);
+    let has_underscores = delimiters.iter().any(|&x| x == '_');
 
     let is_transformable_delimiter = |token: &Token<'_>| {
         if keep == KeepDelimiters::Yes {
