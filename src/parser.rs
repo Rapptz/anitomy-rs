@@ -143,7 +143,6 @@ fn parse_video_resolution<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Elemen
             .iter_mut()
             .find(|t| t.is_free() && t.is_number() && (t.value == "1080" || t.value == "720"))
         {
-            token.mark_known();
             results.push(Element::new(ElementKind::VideoResolution, token));
         }
     }
@@ -904,6 +903,18 @@ fn parse_title<'a>(tokens: &mut [Token<'a>]) -> Option<Element<'a>> {
     }
 }
 
+fn get_last_index_for_release_group(tokens: &[Token<'_>], first: Option<usize>) -> Option<usize> {
+    let other_bracket = find_prev_token(tokens, first, |t| !t.is_enclosed && t.is_open_bracket())
+        .and_then(|i| tokens[i].value.chars().next().and_then(opposite_bracket));
+
+    first.and_then(|index| match other_bracket {
+        Some(bracket) => find_next_token(tokens, index, true, |t| {
+            t.is_closed_bracket() && t.value.starts_with(bracket)
+        }),
+        None => find_next_token(tokens, index, true, |t| t.is_closed_bracket()),
+    })
+}
+
 fn find_release_group<'a, 'b>(tokens: &'b mut [Token<'a>]) -> Option<&'b mut [Token<'a>]> {
     // Find the first enclosed unidentified range
     // e.g. `[Group] Title - Episode [Info]`
@@ -912,15 +923,7 @@ fn find_release_group<'a, 'b>(tokens: &'b mut [Token<'a>]) -> Option<&'b mut [To
         .iter()
         .position(|t| t.is_enclosed && !t.is_identified());
 
-    let other_bracket = find_prev_token(tokens, first, |t| !t.is_enclosed && t.is_open_bracket())
-        .and_then(|i| tokens[i].value.chars().next().and_then(opposite_bracket));
-
-    let mut last = first.and_then(|index| match other_bracket {
-        Some(bracket) => find_next_token(tokens, index, true, |t| {
-            t.is_closed_bracket() && t.value.starts_with(bracket)
-        }),
-        None => find_next_token(tokens, index, true, |t| t.is_closed_bracket()),
-    });
+    let mut last = get_last_index_for_release_group(tokens, first);
 
     // Skip brackets if they have taken tokens and move on to the next pair of brackets instead
     while let Some((start, end)) = first.zip(last) {
@@ -933,15 +936,7 @@ fn find_release_group<'a, 'b>(tokens: &'b mut [Token<'a>]) -> Option<&'b mut [To
         }
 
         first = find_next_token(tokens, end, true, |t| t.is_enclosed && t.is_free());
-        let other_bracket =
-            find_prev_token(tokens, first, |t| !t.is_enclosed && t.is_open_bracket())
-                .and_then(|i| tokens[i].value.chars().next().and_then(opposite_bracket));
-        last = first.and_then(|index| match other_bracket {
-            Some(bracket) => find_next_token(tokens, index, true, |t| {
-                t.is_closed_bracket() && t.value.starts_with(bracket)
-            }),
-            None => find_next_token(tokens, index, true, |t| t.is_closed_bracket()),
-        });
+        last = get_last_index_for_release_group(tokens, first);
     }
 
     // Fall back to the last token before file extension

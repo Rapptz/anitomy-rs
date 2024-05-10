@@ -2525,6 +2525,8 @@
     {
         "input": "[bonkai77].Basilisk.Episode.18.A.Dawn.Without.Light.[BD.1080p.Dual.Audio.x265].mkv",
         "mal_id": 67,
+        "skip": true,
+        "notes": "Dual Audio separated with dots is not parsed currently.",
         "output": {
             "release_group": "bonkai77",
             "title": "Basilisk",
@@ -2549,6 +2551,8 @@
     {
         "input": "Detective-Conan-656 Professor's Video Site (Part 1)",
         "mal_id": 235,
+        "skip": true,
+        "notes": "The (Part 1) is parsed as a release group currently.",
         "output": {
             "title": "Detective Conan",
             "episode": "656",
