@@ -5,7 +5,7 @@ pub(crate) mod parser;
 pub(crate) mod tokenizer;
 pub(crate) mod utils;
 
-pub use element::{ElementKind, Element, OwnedElementObject, ElementObject};
+pub use element::{Element, ElementKind, ElementObject, OwnedElementObject};
 pub use options::Options;
 
 /// Parses a string into its element components with the given options.

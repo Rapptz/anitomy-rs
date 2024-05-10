@@ -86,6 +86,13 @@ impl<'a> Token<'a> {
         self.unknown = false;
     }
 
+    fn with_enclosed(self, is_enclosed: bool) -> Self {
+        Self {
+            is_enclosed,
+            ..self
+        }
+    }
+
     pub(crate) const fn is_identified(&self) -> bool {
         !self.unknown
     }
@@ -409,17 +416,17 @@ impl<'a> Iterator for TokenIterator<'a> {
             return None;
         }
 
+        let is_enclosed = self.bracket_level > 0;
+
         if let Some(value) = self.tokens.take_if(is_open_bracket) {
             self.bracket_level += 1;
-            return Some(Token::open_bracket(value));
+            return Some(Token::open_bracket(value).with_enclosed(self.bracket_level >= 2));
         }
 
         if let Some(value) = self.tokens.take_if(is_closed_bracket) {
             self.bracket_level -= 1;
-            return Some(Token::close_bracket(value));
+            return Some(Token::close_bracket(value).with_enclosed(self.bracket_level >= 1));
         }
-
-        let is_enclosed = self.bracket_level > 0;
 
         if let Some(value) = self.tokens.take_if(is_delimiter) {
             return Some(Token::delimiter(value, is_enclosed));

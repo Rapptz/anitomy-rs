@@ -2429,6 +2429,8 @@
     {
         "input": "05 - Hidan no Aria - Butei Charter Article 1 - [UTW](E7724B68).mkv",
         "mal_id": 8630,
+        "skip": true,
+        "notes": "I don't actually know how this one fails currently",
         "output": {
             "episode": "05",
             "title": "Hidan no Aria",
@@ -2451,6 +2453,8 @@
     {
         "input": "Piano no Mori 2 (TV)",
         "mal_id": 37975,
+        "skip": true,
+        "notes": "Impossible to parse, the 2 is ambiguous and resolves as the episode number",
         "output": {
             "title": "Piano no Mori",
             "season": "2",

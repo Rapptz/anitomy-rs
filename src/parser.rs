@@ -125,7 +125,9 @@ fn is_video_resolution(input: &str) -> bool {
 }
 
 fn parse_video_resolution<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>) {
-    let mut found = results.iter().any(|e| e.kind == ElementKind::VideoResolution);
+    let mut found = results
+        .iter()
+        .any(|e| e.kind == ElementKind::VideoResolution);
     for token in tokens
         .iter_mut()
         .filter(|t| t.is_free() && is_video_resolution(t.value))
@@ -410,7 +412,12 @@ fn parse_single_episode(s: &str) -> Option<(&str, &str)> {
     }
 }
 
-fn parse_multi_episode_range<'a>(tokens: &mut [Token<'a>], index: usize, results: &mut Vec<Element<'a>>, kind: ElementKind) -> bool {
+fn parse_multi_episode_range<'a>(
+    tokens: &mut [Token<'a>],
+    index: usize,
+    results: &mut Vec<Element<'a>>,
+    kind: ElementKind,
+) -> bool {
     if let Some((first, last)) = tokens[index].value.split_once(['-', '~', '&', '+']) {
         let token = &mut tokens[index];
         if let Some(((lower, low_version), (upper, up_version))) =
@@ -879,7 +886,6 @@ fn find_title<'a, 'b>(tokens: &'b mut [Token<'a>]) -> Option<&'b mut [Token<'a>]
     }
 }
 
-
 fn parse_title<'a>(tokens: &mut [Token<'a>]) -> Option<Element<'a>> {
     let range = find_title(tokens)?;
     let value = combine_tokens(range, crate::tokenizer::KeepDelimiters::No);
@@ -905,30 +911,37 @@ fn find_release_group<'a, 'b>(tokens: &'b mut [Token<'a>]) -> Option<&'b mut [To
     let mut first = tokens
         .iter()
         .position(|t| t.is_enclosed && !t.is_identified());
-    let mut last = first.and_then(|index| {
-        find_next_token(tokens, index, false, |t| {
-            t.is_closed_bracket() || t.is_identified()
-        })
+
+    let other_bracket = find_prev_token(tokens, first, |t| !t.is_enclosed && t.is_open_bracket())
+        .and_then(|i| tokens[i].value.chars().next().and_then(opposite_bracket));
+
+    let mut last = first.and_then(|index| match other_bracket {
+        Some(bracket) => find_next_token(tokens, index, true, |t| {
+            t.is_closed_bracket() && t.value.starts_with(bracket)
+        }),
+        None => find_next_token(tokens, index, true, |t| t.is_closed_bracket()),
     });
 
-    // Skip if the range contains other tokens
-    if first.is_some() {
-        if let Some(prev) = find_prev_token(tokens, first, |t| t.is_not_delimiter()) {
-            let token = &tokens[prev];
-            if !token.is_open_bracket() {
-                if let Some(last) = last {
-                    return find_release_group(&mut tokens[last..]);
-                } else {
-                    return None;
-                }
-            }
+    // Skip brackets if they have taken tokens and move on to the next pair of brackets instead
+    while let Some((start, end)) = first.zip(last) {
+        if start > tokens.len() || end > tokens.len() {
+            break;
         }
-        if let Some(idx) = last {
-            let token = &tokens[idx];
-            if !token.is_closed_bracket() {
-                return find_release_group(&mut tokens[idx..]);
-            }
+
+        if tokens[start..end].iter().all(|t| !t.is_identified()) {
+            break;
         }
+
+        first = find_next_token(tokens, end, true, |t| t.is_enclosed && t.is_free());
+        let other_bracket =
+            find_prev_token(tokens, first, |t| !t.is_enclosed && t.is_open_bracket())
+                .and_then(|i| tokens[i].value.chars().next().and_then(opposite_bracket));
+        last = first.and_then(|index| match other_bracket {
+            Some(bracket) => find_next_token(tokens, index, true, |t| {
+                t.is_closed_bracket() && t.value.starts_with(bracket)
+            }),
+            None => find_next_token(tokens, index, true, |t| t.is_closed_bracket()),
+        });
     }
 
     // Fall back to the last token before file extension

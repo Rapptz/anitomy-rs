@@ -40,10 +40,7 @@ impl Keyword {
     const UNBOUNDED: u8 = 1 << 1;
 
     pub(crate) const fn new(kind: KeywordKind) -> Self {
-        Self {
-            kind,
-            flags: 0,
-        }
+        Self { kind, flags: 0 }
     }
 
     pub(crate) const fn unbounded(kind: KeywordKind) -> Self {
