@@ -232,39 +232,43 @@ fn inner_parse_season<'a>(tokens: &mut [Token<'a>]) -> Option<Element<'a>> {
     None
 }
 
-fn parse_season<'a>(tokens: &mut [Token<'a>]) -> Option<Element<'a>> {
+fn parse_season<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>) {
     if let Some(result) = inner_parse_season(tokens) {
-        return Some(result);
+        results.push(result);
+        return;
     }
 
     // Check other patterns for seasons (e.g. S2, 第2期)
+    // Note that sometimes the token can be concatenated (e.g. S01+S02)
+    // This concatenation only goes 1 layer deep and in left to right order
+    // So S01+S02+S03+S04 becomes [S01+S02, +, S03+S04]
     for token in tokens.iter_mut().filter(|x| x.is_free()) {
-        // S\d{1,2} pattern
-        if let Some(suffix) = token.value.strip_prefix(['S', 's']) {
-            if (1..=2).contains(&suffix.len()) && suffix.bytes().all(|x| x.is_ascii_digit()) {
-                token.mark_known();
-                return Some(Element {
-                    kind: ElementKind::Season,
-                    value: suffix.into(),
-                    position: token.position,
-                });
+        for value in token.value.split(['.', '-', '&', '+', '~']) {
+            // S\d{1,2} pattern
+            if let Some(suffix) = value.strip_prefix(['S', 's']) {
+                if (1..=2).contains(&suffix.len()) && suffix.bytes().all(|x| x.is_ascii_digit()) {
+                    token.mark_known();
+                    results.push(Element {
+                        kind: ElementKind::Season,
+                        value: suffix.into(),
+                        position: token.position,
+                    });
+                }
             }
-        }
-        // 第2期 pattern
-        if let Some(prefix) = token.value.strip_suffix('期') {
-            let prefix = prefix.strip_prefix('第').unwrap_or(prefix);
-            if (1..=2).contains(&prefix.len()) && prefix.bytes().all(|x| x.is_ascii_digit()) {
-                token.mark_known();
-                return Some(Element {
-                    kind: ElementKind::Season,
-                    value: prefix.into(),
-                    position: token.position,
-                });
+            // 第2期 pattern
+            if let Some(prefix) = value.strip_suffix('期') {
+                let prefix = prefix.strip_prefix('第').unwrap_or(prefix);
+                if (1..=2).contains(&prefix.len()) && prefix.bytes().all(|x| x.is_ascii_digit()) {
+                    token.mark_known();
+                    results.push(Element {
+                        kind: ElementKind::Season,
+                        value: prefix.into(),
+                        position: token.position,
+                    });
+                }
             }
         }
     }
-
-    None
 }
 
 fn parse_volume<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>) {
@@ -1097,9 +1101,7 @@ pub(crate) fn parse_with_options(mut tokens: Vec<Token<'_>>, options: Options) -
     }
 
     if options.parse_season() {
-        if let Some(el) = parse_season(&mut tokens) {
-            results.push(el);
-        }
+        parse_season(&mut tokens, &mut results);
     }
 
     if options.parse_episode() {

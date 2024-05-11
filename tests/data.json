@@ -2645,6 +2645,8 @@
     },
     {
         "input": "The.Eminence.in.Shadow.S01E05.I.Am....1080p.BluRay.DD2.0.x265-ExCaLiBuR.mkv",
+        "skip": true,
+        "notes": "The dots in the episode title are not parsed correctly.",
         "mal_id": 48316,
         "output": {
             "title": "The Eminence in Shadow",
