@@ -461,6 +461,206 @@ fn parse_multi_episode_range<'a>(
 
 fn parse_episode<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>, kind: ElementKind) {
     let is_regular_episode = kind == ElementKind::Episode;
+    // While it's tempting to combine these for loops into one, it's imperative that
+    // these are separated out since this allows the set patterns to go through
+    // *the entire string* before choosing a less favourable outcome
+
+    // For example: Nier:Automata Ver1.1a - 01
+    // In here, the 01 is more important than the 1a, despite coming in later.
+
+    // Parse episode prefixes (e.g. E1, EP1, Episode 1, etc)
+    for index in 0..tokens.len() {
+        if !tokens[index].is_free() {
+            continue;
+        }
+
+        let is_keyword = tokens[index]
+            .keyword
+            .is_some_and(|k| k.kind == KeywordKind::Episode);
+        if is_keyword {
+            if let Some(next) = find_next_token(tokens, index, true, |t| t.is_not_delimiter()) {
+                if tokens[next].is_free() && tokens[next].is_mostly_numbers() {
+                    if parse_multi_episode_range(tokens, next, results, kind) {
+                        tokens[index].mark_known();
+                        return;
+                    }
+
+                    if tokens[next].is_number() {
+                        tokens[index].mark_known();
+                        tokens[next].mark_known();
+                        results.push(Element::new(kind, &tokens[next]));
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    for token in tokens.iter_mut().filter(|t| t.is_free()) {
+        if let Some(m) = episode_prefix_regex().captures(token.value) {
+            results.push(Element {
+                kind,
+                value: m.get(1).unwrap().as_str().into(),
+                position: token.position,
+            });
+            token.mark_known();
+            if let Some(inner) = m.get(2) {
+                results.push(Element {
+                    kind: ElementKind::ReleaseVersion,
+                    value: inner.as_str().into(),
+                    position: token.position,
+                });
+            }
+            return;
+        }
+    }
+
+    if let Some(number) = parse_number_in_number_episode(tokens) {
+        results.push(number);
+        return;
+    }
+
+    // Single episode (e.g. 01v2)
+    for token in tokens.iter_mut().filter(|t| t.is_free()) {
+        if let Some((prefix, suffix)) = parse_single_episode(token.value) {
+            if !suffix.is_empty() {
+                token.mark_known();
+                results.push(Element {
+                    kind,
+                    value: prefix.into(),
+                    position: token.position,
+                });
+                results.push(Element {
+                    kind: ElementKind::ReleaseVersion,
+                    value: suffix.into(),
+                    position: token.position,
+                });
+                return;
+            }
+        }
+    }
+
+    // Multi-episode, (e.g. 01-02, 03-05v2)
+    for index in 0..tokens.len() {
+        if tokens[index].is_free() && parse_multi_episode_range(tokens, index, results, kind) {
+            return;
+        }
+    }
+
+    // Season and episode (e.g. `2x01`, `S01E03`, `S01-02xE001-150`)
+    for token in tokens.iter_mut().filter(|t| t.is_free()) {
+        if let Some(captures) = season_and_episode_regex().captures(token.value) {
+            if captures[1].parse::<u8>().unwrap_or_default() != 0 {
+                results.push(Element {
+                    kind: ElementKind::Season,
+                    value: captures.get(1).unwrap().as_str().into(),
+                    position: token.position,
+                });
+                token.mark_known();
+                if let Some(inner) = captures.get(2) {
+                    results.push(Element {
+                        kind: ElementKind::Season,
+                        value: inner.as_str().into(),
+                        position: token.position,
+                    });
+                }
+
+                results.push(Element {
+                    kind,
+                    value: captures.get(3).unwrap().as_str().into(),
+                    position: token.position,
+                });
+                if let Some(inner) = captures.get(4) {
+                    results.push(Element {
+                        kind,
+                        value: inner.as_str().into(),
+                        position: token.position,
+                    });
+                }
+                if let Some(inner) = captures.get(5) {
+                    results.push(Element {
+                        kind: ElementKind::ReleaseVersion,
+                        value: inner.as_str().into(),
+                        position: token.position,
+                    });
+                }
+                return;
+            }
+        }
+    }
+
+    // Type and episode (e.g. `ED1`, `OP4a`, `OVA2`)
+    if let Some((_, token)) = find_pair_mut(
+        tokens,
+        |t| {
+            t.keyword.is_some_and(|x| x.kind == KeywordKind::Type)
+                && !t.value.eq_ignore_ascii_case("movie")
+        },
+        |t| t.is_not_delimiter(),
+    ) {
+        if token.is_free() && token.is_number() {
+            token.mark_known();
+            results.push(Element::new(kind, token));
+            return;
+        }
+    }
+
+    // Fractional episode (e.g. `07.5`)
+    for token in tokens.iter_mut().filter(|t| t.is_free()) {
+        if let Some((first, second)) = token.value.split_once('.') {
+            // We don't allow any fractional part other than `.5`, because there are cases
+            // where such a number is a part of the title (e.g. `Evangelion: 1.11`,
+            // `Tokyo Magnitude 8.0`) or a keyword (e.g. `5.1`).
+            if second == "5" && is_valid_episode_number(first) {
+                token.mark_known();
+                results.push(Element::new(kind, token));
+                return;
+            }
+        }
+    }
+
+    // Number sign, e.g. #01 or #02-03v2
+    for token in tokens.iter_mut().filter(|t| t.is_free()) {
+        if let Some(captures) = number_sign_episode_regex().captures(token.value) {
+            token.mark_known();
+            results.push(Element {
+                kind,
+                value: captures.get(1).unwrap().as_str().into(),
+                position: token.position,
+            });
+            if let Some(inner) = captures.get(2) {
+                results.push(Element {
+                    kind,
+                    value: inner.as_str().into(),
+                    position: token.position,
+                });
+            }
+            if let Some(inner) = captures.get(3) {
+                results.push(Element {
+                    kind: ElementKind::ReleaseVersion,
+                    value: inner.as_str().into(),
+                    position: token.position,
+                });
+            }
+            return;
+        }
+    }
+    // Japanese counter (e.g. `第01話`)
+    for token in tokens.iter_mut().filter(|t| t.is_free()) {
+        if let Some(prefix) = token.value.strip_suffix('話') {
+            let prefix = prefix.strip_prefix('第').unwrap_or(prefix);
+            if is_valid_episode_number(prefix) {
+                token.mark_known();
+                results.push(Element {
+                    kind,
+                    value: prefix.into(),
+                    position: token.position,
+                });
+                return;
+            }
+        }
+    }
+
     // Equivalent numbers (e.g. `01 (176)`, `29 (04)`)
     if is_regular_episode {
         for index in tokens
@@ -526,193 +726,6 @@ fn parse_episode<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>, k
         }
     }
 
-    if let Some(number) = parse_number_in_number_episode(tokens) {
-        results.push(number);
-        return;
-    }
-
-    for index in 0..tokens.len() {
-        if !tokens[index].is_free() {
-            continue;
-        }
-
-        let is_keyword = tokens[index]
-            .keyword
-            .is_some_and(|k| k.kind == KeywordKind::Episode);
-        if is_keyword {
-            if let Some(next) = find_next_token(tokens, index, true, |t| t.is_not_delimiter()) {
-                if tokens[next].is_free() && tokens[next].is_mostly_numbers() {
-                    if parse_multi_episode_range(tokens, next, results, kind) {
-                        tokens[index].mark_known();
-                        return;
-                    }
-
-                    if tokens[next].is_number() {
-                        tokens[index].mark_known();
-                        tokens[next].mark_known();
-                        results.push(Element::new(kind, &tokens[next]));
-                        return;
-                    }
-                }
-            }
-        }
-
-        if parse_multi_episode_range(tokens, index, results, kind) {
-            return;
-        }
-
-        let token = &mut tokens[index];
-        if let Some(m) = episode_prefix_regex().captures(token.value) {
-            results.push(Element {
-                kind,
-                value: m.get(1).unwrap().as_str().into(),
-                position: token.position,
-            });
-            token.mark_known();
-            if let Some(inner) = m.get(2) {
-                results.push(Element {
-                    kind: ElementKind::ReleaseVersion,
-                    value: inner.as_str().into(),
-                    position: token.position,
-                });
-            }
-            return;
-        }
-
-        // Season and episode (e.g. `2x01`, `S01E03`, `S01-02xE001-150`)
-        if let Some(captures) = season_and_episode_regex().captures(token.value) {
-            if captures[1].parse::<u8>().unwrap_or_default() != 0 {
-                results.push(Element {
-                    kind: ElementKind::Season,
-                    value: captures.get(1).unwrap().as_str().into(),
-                    position: token.position,
-                });
-                token.mark_known();
-                if let Some(inner) = captures.get(2) {
-                    results.push(Element {
-                        kind: ElementKind::Season,
-                        value: inner.as_str().into(),
-                        position: token.position,
-                    });
-                }
-
-                results.push(Element {
-                    kind,
-                    value: captures.get(3).unwrap().as_str().into(),
-                    position: token.position,
-                });
-                if let Some(inner) = captures.get(4) {
-                    results.push(Element {
-                        kind,
-                        value: inner.as_str().into(),
-                        position: token.position,
-                    });
-                }
-                if let Some(inner) = captures.get(5) {
-                    results.push(Element {
-                        kind: ElementKind::ReleaseVersion,
-                        value: inner.as_str().into(),
-                        position: token.position,
-                    });
-                }
-                return;
-            }
-        }
-
-        // Single episode (e.g. 01v2)
-        if let Some((prefix, suffix)) = parse_single_episode(token.value) {
-            if !suffix.is_empty() {
-                token.mark_known();
-                results.push(Element {
-                    kind,
-                    value: prefix.into(),
-                    position: token.position,
-                });
-                results.push(Element {
-                    kind: ElementKind::ReleaseVersion,
-                    value: suffix.into(),
-                    position: token.position,
-                });
-                return;
-            }
-        }
-
-        // Number sign, e.g. #01 or #02-03v2
-        if let Some(captures) = number_sign_episode_regex().captures(token.value) {
-            token.mark_known();
-            results.push(Element {
-                kind,
-                value: captures.get(1).unwrap().as_str().into(),
-                position: token.position,
-            });
-            if let Some(inner) = captures.get(2) {
-                results.push(Element {
-                    kind,
-                    value: inner.as_str().into(),
-                    position: token.position,
-                });
-            }
-            if let Some(inner) = captures.get(3) {
-                results.push(Element {
-                    kind: ElementKind::ReleaseVersion,
-                    value: inner.as_str().into(),
-                    position: token.position,
-                });
-            }
-            return;
-        }
-
-        // Japanese counter (e.g. `第01話`)
-        if let Some(prefix) = token.value.strip_suffix('話') {
-            let prefix = prefix.strip_prefix('第').unwrap_or(prefix);
-            if is_valid_episode_number(prefix) {
-                token.mark_known();
-                results.push(Element {
-                    kind,
-                    value: prefix.into(),
-                    position: token.position,
-                });
-                return;
-            }
-        }
-
-        // Partial episode (e.g. `4a`, `111C`)
-        if let Some(prefix) = token.value.strip_suffix(['A', 'B', 'C', 'a', 'b', 'c']) {
-            if is_valid_episode_number(prefix) {
-                token.mark_known();
-                results.push(Element::new(kind, token));
-                return;
-            }
-        }
-        // Fractional episode (e.g. `07.5`)
-        if let Some((first, second)) = token.value.split_once('.') {
-            // We don't allow any fractional part other than `.5`, because there are cases
-            // where such a number is a part of the title (e.g. `Evangelion: 1.11`,
-            // `Tokyo Magnitude 8.0`) or a keyword (e.g. `5.1`).
-            if second == "5" && is_valid_episode_number(first) {
-                token.mark_known();
-                results.push(Element::new(kind, token));
-                return;
-            }
-        }
-    }
-
-    // Type and episode (e.g. `ED1`, `OP4a`, `OVA2`)
-    if let Some((_, token)) = find_pair_mut(
-        tokens,
-        |t| {
-            t.keyword.is_some_and(|x| x.kind == KeywordKind::Type)
-                && !t.value.eq_ignore_ascii_case("movie")
-        },
-        |t| t.is_not_delimiter(),
-    ) {
-        if token.is_free() && token.is_number() {
-            token.mark_known();
-            results.push(Element::new(kind, token));
-            return;
-        }
-    }
-
     // Separated number (e.g. ` - 08`)
     // Have to do manual loop due to mutability
     for index in 0..tokens.len() {
@@ -734,10 +747,10 @@ fn parse_episode<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>, k
         }
     }
 
+    // Isolated number (e.g. [12], (2006), etc.)
     {
         let mut iter = windows_mut(tokens);
         while let Some([first, middle, last]) = iter.next() {
-            // Isolated number (e.g. [12], (2006), etc.)
             if first.is_open_bracket()
                 && last.is_closed_bracket()
                 && middle.is_free()
@@ -745,6 +758,17 @@ fn parse_episode<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>, k
             {
                 results.push(Element::new(kind, middle));
                 middle.mark_known();
+                return;
+            }
+        }
+    }
+
+    // Partial episode (e.g. `4a`, `111C`)
+    for token in tokens.iter_mut().filter(|t| t.is_free()) {
+        if let Some(prefix) = token.value.strip_suffix(['A', 'B', 'C', 'a', 'b', 'c']) {
+            if is_valid_episode_number(prefix) {
+                token.mark_known();
+                results.push(Element::new(kind, token));
                 return;
             }
         }

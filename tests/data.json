@@ -2572,6 +2572,8 @@
     {
         "input": "S01E01-Senpai is a bit ..., Senpai, don't you ever get angry [72FF1098].mkv",
         "mal_id": 0,
+        "skip": true,
+        "notes": "This is parsed as a series title, it's an impossible parse.",
         "output": {
             "season": "01",
             "episode": "01",
