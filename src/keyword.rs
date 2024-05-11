@@ -174,6 +174,7 @@ pub(crate) static KEYWORDS: phf::Map<&'static UncasedStr, Keyword> = phf_map! {
     UncasedStr::new("VOSTFR")       =>    Keyword::new(KeywordKind::Language),
     UncasedStr::new("CHT")          =>    Keyword::new(KeywordKind::Language),
     UncasedStr::new("CHS")          =>    Keyword::new(KeywordKind::Language),
+    UncasedStr::new("CHI")          =>    Keyword::new(KeywordKind::Language),
 
     // Other
     UncasedStr::new("Remaster")     =>    Keyword::new(KeywordKind::Other),
