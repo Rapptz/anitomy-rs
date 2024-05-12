@@ -1,3 +1,6 @@
 /target
 /.vscode
+/pkg
+src/main.rs
 test.py
+index.html

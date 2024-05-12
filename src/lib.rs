@@ -1,3 +1,6 @@
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+
 pub(crate) mod element;
 pub(crate) mod keyword;
 pub(crate) mod options;
@@ -23,4 +26,13 @@ pub fn parse_with_options(input: &str, options: Options) -> Vec<Element<'_>> {
 /// Parses a string into its element components with the given options
 pub fn parse(input: &str) -> Vec<Element<'_>> {
     parse_with_options(input, Options::default())
+}
+
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen(js_name = parse))]
+pub fn parse_wasm(input: &str, options: options::JsOptions) -> Vec<element::JsElement> {
+    parse_with_options(input, options.into())
+        .into_iter()
+        .map(element::JsElement::from)
+        .collect()
 }

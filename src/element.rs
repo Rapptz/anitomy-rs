@@ -1,3 +1,6 @@
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+
 use std::borrow::Cow;
 
 use crate::tokenizer::Token;
@@ -6,6 +9,7 @@ use crate::tokenizer::Token;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 pub enum ElementKind {
     AudioTerm,
     DeviceCompatibility,
@@ -385,4 +389,21 @@ impl_from_iterator! {
     VideoTerm => video_term,
     Volume => volume,
     Year => year,
+}
+
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen(getter_with_clone, js_name = Element))]
+pub struct JsElement {
+    pub kind: ElementKind,
+    pub value: String,
+}
+
+#[cfg(feature = "wasm")]
+impl<'a> From<Element<'a>> for JsElement {
+    fn from(el: Element<'a>) -> Self {
+        Self {
+            kind: el.kind,
+            value: el.value.into_owned(),
+        }
+    }
 }

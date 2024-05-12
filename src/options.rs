@@ -1,3 +1,6 @@
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+
 /// Options relating to the [`Tokenizer`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Options(u16);
@@ -131,5 +134,60 @@ impl Options {
     pub fn years(mut self, toggle: bool) -> Self {
         self.toggle_flag(Self::YEAR, toggle);
         self
+    }
+}
+
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen(js_name = Options))]
+pub struct JsOptions {
+    pub episode: bool,
+    pub episode_title: bool,
+    pub file_checksum: bool,
+    pub file_extension: bool,
+    pub release_group: bool,
+    pub season: bool,
+    pub title: bool,
+    pub video_resolution: bool,
+    pub year: bool,
+}
+
+#[cfg(feature = "wasm")]
+#[cfg_attr(feature = "wasm", wasm_bindgen(js_class = Options))]
+impl JsOptions {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> Self {
+        Self {
+            episode: true,
+            episode_title: true,
+            file_checksum: true,
+            file_extension: true,
+            release_group: true,
+            season: true,
+            title: true,
+            video_resolution: true,
+            year: true,
+        }
+    }
+}
+
+#[cfg(feature = "wasm")]
+impl Default for JsOptions {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+#[cfg(feature = "wasm")]
+impl From<JsOptions> for Options {
+    fn from(value: JsOptions) -> Self {
+        Self::default()
+            .episodes(value.episode)
+            .episode_titles(value.episode_title)
+            .file_checksums(value.file_checksum)
+            .file_extensions(value.file_extension)
+            .release_groups(value.release_group)
+            .seasons(value.season)
+            .titles(value.title)
+            .video_resolutions(value.video_resolution)
+            .years(value.year)
     }
 }
