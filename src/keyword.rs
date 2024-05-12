@@ -270,6 +270,8 @@ pub(crate) static KEYWORDS: phf::Map<&'static UncasedStr, Keyword> = phf_map! {
     UncasedStr::new("Multisub")     =>    Keyword::new(KeywordKind::Subtitles),
     UncasedStr::new("Multi Sub")    =>    Keyword::new(KeywordKind::Subtitles),
     UncasedStr::new("Multi-Sub")    =>    Keyword::new(KeywordKind::Subtitles),
+    UncasedStr::new("CC")           =>    Keyword::ambiguous(KeywordKind::Subtitles),
+    UncasedStr::new("SDH")          =>    Keyword::ambiguous(KeywordKind::Subtitles),
 
     // Type
     UncasedStr::new("TV")           =>    Keyword::ambiguous(KeywordKind::Type),
