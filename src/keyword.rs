@@ -169,6 +169,7 @@ pub(crate) static KEYWORDS: phf::Map<&'static UncasedStr, Keyword> = phf_map! {
     UncasedStr::new("ITA")          =>    Keyword::ambiguous(KeywordKind::Language),  // e.g. "Bokura ga Ita"
     UncasedStr::new("JAP")          =>    Keyword::new(KeywordKind::Language),
     UncasedStr::new("JP")           =>    Keyword::new(KeywordKind::Language),
+    UncasedStr::new("JA")           =>    Keyword::new(KeywordKind::Language),
     UncasedStr::new("JPN")          =>    Keyword::new(KeywordKind::Language),
     UncasedStr::new("PT-BR")        =>    Keyword::new(KeywordKind::Language),
     UncasedStr::new("VOSTFR")       =>    Keyword::new(KeywordKind::Language),

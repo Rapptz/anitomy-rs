@@ -2765,5 +2765,20 @@
             "video_resolution": "1080p",
             "video_term": "HEVC"
         }
+    },
+    {
+        "input": "I.Got.a.Cheat.Skill.in.Another.World.and.Became.Unrivaled.in.the.Real.World,.Too.S01E01.WEBRip.Netflix.ja[cc].srt",
+        "output": {
+            "title": "I Got a Cheat Skill in Another World and Became Unrivaled in the Real World, Too",
+            "season": "01",
+            "episode": "01",
+            "source": [
+                "WEBRip",
+                "Netflix"
+            ],
+            "language": "ja",
+            "subtitles": "cc",
+            "file_extension": "srt"
+        }
     }
 ]
