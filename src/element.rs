@@ -34,6 +34,35 @@ pub enum ElementKind {
     Year,
 }
 
+impl ElementKind {
+    /// Returns this ElementKind as a human representable string
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            ElementKind::AudioTerm => "Audio Term",
+            ElementKind::DeviceCompatibility => "Device Compatibility",
+            ElementKind::Episode => "Episode",
+            ElementKind::EpisodeTitle => "Episode Title",
+            ElementKind::EpisodeAlt => "Episode Alt",
+            ElementKind::FileChecksum => "File Checksum",
+            ElementKind::FileExtension => "File Extension",
+            ElementKind::Language => "Language",
+            ElementKind::Other => "Other",
+            ElementKind::ReleaseGroup => "Release Group",
+            ElementKind::ReleaseInformation => "Release Information",
+            ElementKind::ReleaseVersion => "Release Version",
+            ElementKind::Season => "Season",
+            ElementKind::Source => "Source",
+            ElementKind::Subtitles => "Subtitles",
+            ElementKind::Title => "Title",
+            ElementKind::Type => "Type",
+            ElementKind::VideoResolution => "Video Resolution",
+            ElementKind::VideoTerm => "Video Term",
+            ElementKind::Volume => "Volume",
+            ElementKind::Year => "Year",
+        }
+    }
+}
+
 /// A parsed element
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
