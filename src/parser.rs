@@ -29,6 +29,22 @@ fn is_valid_episode_number(s: &str) -> bool {
     !s.is_empty() && s.len() <= 4 && s.bytes().all(|x| x.is_ascii_digit())
 }
 
+fn is_japanese_number(ch: char) -> bool {
+    matches!(
+        ch,
+        '〇' | '一' | '二' | '三' | '四' | '五' | '六' | '七' | '八' | '九' | '十' | '百' | '千'
+    )
+}
+
+fn is_valid_japanese_episode(s: &str) -> bool {
+    if s.is_ascii() {
+        is_valid_episode_number(s)
+    } else {
+        let codepoints = s.chars().count();
+        codepoints > 0 && codepoints <= 4 && s.chars().all(is_japanese_number)
+    }
+}
+
 fn parse_file_extension<'a>(tokens: &mut [Token<'a>]) -> Option<Element<'a>> {
     let [previous, last] = last_chunk_mut(tokens)?;
     let is_file_extension = last
@@ -653,7 +669,7 @@ fn parse_episode<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>, k
     for token in tokens.iter_mut().filter(|t| t.is_free()) {
         if let Some(prefix) = token.value.strip_suffix('話') {
             let prefix = prefix.strip_prefix('第').unwrap_or(prefix);
-            if is_valid_episode_number(prefix) {
+            if is_valid_japanese_episode(prefix) {
                 token.mark_known();
                 results.push(Element {
                     kind,
