@@ -170,6 +170,18 @@ fn is_year(s: &str) -> bool {
         .is_some_and(|x| (1950..=2050).contains(&x))
 }
 
+fn is_month(s: &str) -> bool {
+    s.parse::<u8>()
+    .ok()
+    .is_some_and(|month| (1..=12).contains(&month))
+}
+
+fn is_day(s: &str) -> bool {
+    s.parse::<u8>()
+    .ok()
+    .is_some_and(|x| (1..=31).contains(&x))
+}
+
 fn parse_year<'a>(tokens: &mut [Token<'a>]) -> Option<Element<'a>> {
     // Find a year enclosed by brackets
     if let Some(token) = tokens
@@ -200,6 +212,35 @@ fn parse_year<'a>(tokens: &mut [Token<'a>]) -> Option<Element<'a>> {
             tokens[index].mark_known();
             return Some(Element::new(ElementKind::Year, &tokens[index]));
         }
+    }
+
+    None
+}
+
+fn parse_date<'a>(tokens: &mut [Token<'a>]) -> Option<Element<'a>> {
+    // Parses dates in YYYY.MM.DD format
+    // Due to tokenisation this ends up being [YYYY.MM, ., DD]
+    let mut iter = windows_mut(tokens);
+    while let Some([year_month, delimiter, day]) = iter.next() {
+        if !(delimiter.is_delimiter() && delimiter.value.starts_with(['.', '-']) && day.is_number()) {
+            continue;
+        }
+
+        let Some((year, month)) = year_month.value.split_once(['.', '-']) else {
+            continue;
+        };
+        if !is_year(year) || !is_month(month) || !is_day(day.value) {
+            continue;
+        }
+
+        year_month.mark_known();
+        delimiter.mark_known();
+        day.mark_known();
+        return Some(Element {
+            kind: ElementKind::Date,
+            value: Cow::Owned(format!("{}{}{}", year_month.value, delimiter.value, day.value)),
+            position: year_month.position,
+        });
     }
 
     None
@@ -1108,6 +1149,12 @@ pub(crate) fn parse_with_options(mut tokens: Vec<Token<'_>>, options: Options) -
 
     if options.parse_video_resolution() {
         parse_video_resolution(&mut tokens, &mut results);
+    }
+
+    if options.parse_date() {
+        if let Some(el) = parse_date(&mut tokens) {
+            results.push(el);
+        }
     }
 
     if options.parse_year() {

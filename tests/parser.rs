@@ -101,6 +101,8 @@ struct OptionOverride {
     video_resolution: bool,
     #[serde(default = "always_true")]
     year: bool,
+    #[serde(default = "always_true")]
+    date: bool,
 }
 
 impl Default for OptionOverride {
@@ -115,6 +117,7 @@ impl Default for OptionOverride {
             title: true,
             video_resolution: true,
             year: true,
+            date: true,
         }
     }
 }
@@ -131,6 +134,7 @@ impl From<OptionOverride> for anitomy::Options {
             .titles(value.title)
             .video_resolutions(value.video_resolution)
             .years(value.year)
+            .dates(value.date)
     }
 }
 

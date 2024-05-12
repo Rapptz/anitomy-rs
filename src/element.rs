@@ -32,6 +32,7 @@ pub enum ElementKind {
     VideoTerm,
     Volume,
     Year,
+    Date,
 }
 
 impl ElementKind {
@@ -59,6 +60,7 @@ impl ElementKind {
             ElementKind::VideoTerm => "Video Term",
             ElementKind::Volume => "Volume",
             ElementKind::Year => "Year",
+            ElementKind::Date => "Date",
         }
     }
 }
@@ -214,6 +216,11 @@ pub struct ElementObject<'a> {
         serde(borrow, default, skip_serializing_if = "Option::is_none")
     )]
     pub year: Option<Cow<'a, str>>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(borrow, default, skip_serializing_if = "Option::is_none")
+    )]
+    pub date: Option<Cow<'a, str>>,
 }
 
 /// A helper type that turns a slice of [`Element`] objects into a flat struct with multiple elements.
@@ -333,6 +340,11 @@ pub struct OwnedElementObject {
         serde(default, skip_serializing_if = "Option::is_none")
     )]
     pub year: Option<String>,
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Option::is_none")
+    )]
+    pub date: Option<String>,
 }
 
 macro_rules! impl_from_iterator {
@@ -418,6 +430,7 @@ impl_from_iterator! {
     VideoTerm => video_term,
     Volume => volume,
     Year => year,
+    Date => date,
 }
 
 #[cfg(feature = "wasm")]

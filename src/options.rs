@@ -8,7 +8,7 @@ pub struct Options(u16);
 impl Default for Options {
     /// The default option is to have everything enabled
     fn default() -> Self {
-        Self(0b0000_0001_1111_1111)
+        Self(0b0000_0011_1111_1111)
     }
 }
 
@@ -22,6 +22,7 @@ impl Options {
     const TITLE: u16 = 1 << 6;
     const VIDEO_RESOLUTION: u16 = 1 << 7;
     const YEAR: u16 = 1 << 8;
+    const DATE: u16 = 1 << 9;
 
     #[inline]
     const fn has_flag(&self, val: u16) -> bool {
@@ -82,6 +83,13 @@ impl Options {
         self.has_flag(Self::YEAR)
     }
 
+    /// Returns a bool indiciating whether to parse dates in the filename.
+    ///
+    /// Only formats supported currently are `YYYY-MM-DD`
+    pub const fn parse_date(&self) -> bool {
+        self.has_flag(Self::DATE)
+    }
+
     /// A builder method to toggle the option to parse episodes.
     pub fn episodes(mut self, toggle: bool) -> Self {
         self.toggle_flag(Self::EPISODE, toggle);
@@ -135,6 +143,12 @@ impl Options {
         self.toggle_flag(Self::YEAR, toggle);
         self
     }
+
+    /// A builder method to toggle the option to parse years.
+    pub fn dates(mut self, toggle: bool) -> Self {
+        self.toggle_flag(Self::DATE, toggle);
+        self
+    }
 }
 
 #[cfg(feature = "wasm")]
@@ -149,6 +163,7 @@ pub struct JsOptions {
     pub title: bool,
     pub video_resolution: bool,
     pub year: bool,
+    pub date: bool,
 }
 
 #[cfg(feature = "wasm")]
@@ -166,6 +181,7 @@ impl JsOptions {
             title: true,
             video_resolution: true,
             year: true,
+            date: true,
         }
     }
 }
@@ -189,5 +205,6 @@ impl From<JsOptions> for Options {
             .titles(value.title)
             .video_resolutions(value.video_resolution)
             .years(value.year)
+            .dates(value.date)
     }
 }

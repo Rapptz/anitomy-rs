@@ -2780,5 +2780,17 @@
             "subtitles": "cc",
             "file_extension": "srt"
         }
+    },
+    {
+        "input": "ホリミヤ-piece- #11「チョコレート」-2023-09-10-JPTVclub.srt",
+        "notes": "The title is missing a -, this is because it's stripped from the end of the string and removing it would break other series",
+        "output": {
+            "title": "ホリミヤ-piece",
+            "episode": "11",
+            "episode_title": "チョコレート",
+            "date": "2023-09-10",
+            "release_group": "JPTVclub",
+            "file_extension": "srt"
+        }
     }
 ]
