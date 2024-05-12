@@ -4,7 +4,7 @@ A Rust port of [anitomy](https://github.com/erengy/anitomy/). Most of the credit
 
 This port was made to facilitate usage in Rust programs and also to support compiling under WASM. As such, parts of it have been redesigned to accommodate differences in idiomatic programming style.
 
-# Differences
+## Differences
 
 This is based off of the (as of writing) incomplete v2 rewrite of anitomy.
 
@@ -24,14 +24,14 @@ That being said, there are some differences from that version of anitomy:
 
 As a result this **does not** aim to be fully compatible with upstream anitomy but it tries its best to be.
 
-# Features
+## Features
 
 By default, no features are enabled. The following features can be enabled:
 
 - **serde**: Adds support for `serde` (de)serialization.
 - **wasm**: Adds support for exporting a `parse` function via WASM. This is essentially a `parse` function that takes the input and an `Options`.
 
-## Compiling for WASM
+### Compiling for WASM
 
 This library is capable of being exported to a `.wasm` file using `wasm_bindgen`. It exports the following types:
 
@@ -46,6 +46,6 @@ Except augmented to support `wasm_bindgen`. Using [`wasm-pack`](https://rustwasm
 wasm-pack build --target web --release --features wasm
 ```
 
-# License
+## License
 
 MPLv2
