@@ -2792,5 +2792,14 @@
             "release_group": "JPTVclub",
             "file_extension": "srt"
         }
+    },
+    {
+        "input": "Hibike Euphonium S03EP01.srt",
+        "output": {
+            "title": "Hibike Euphonium",
+            "season": "03",
+            "episode": "01",
+            "file_extension": "srt"
+        }
     }
 ]

@@ -408,7 +408,7 @@ fn episode_prefix_regex() -> &'static Regex {
 
 fn season_and_episode_regex() -> &'static Regex {
     static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r#"^S?(\d{1,2})(?:-S?(\d{1,2}))?(?:x|[ ._-x]?E)(\d{1,4})(?:-E?(\d{1,4}))?(?:[vV](\d))?$"#).unwrap())
+    REGEX.get_or_init(|| Regex::new(r#"^S?(\d{1,2})(?:-S?(\d{1,2}))?(?:x|[ ._-x]?EP?)(\d{1,4})(?:-(?:EP?)?(\d{1,4}))?(?:[vV](\d))?$"#).unwrap())
 }
 
 fn number_sign_episode_regex() -> &'static Regex {
