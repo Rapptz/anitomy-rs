@@ -413,7 +413,7 @@ fn season_and_episode_regex() -> &'static Regex {
 
 fn number_sign_episode_regex() -> &'static Regex {
     static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r#"#(\d{1,4})(?:[-~&+](\d{1,4}))?(?:[vV](\d))?"#).unwrap())
+    REGEX.get_or_init(|| Regex::new(r#"[#＃](\d{1,4})(?:[-~&+](\d{1,4}))?(?:[vV](\d))?"#).unwrap())
 }
 
 fn parse_number_in_number_episode<'a>(tokens: &mut [Token<'a>]) -> Option<Element<'a>> {
