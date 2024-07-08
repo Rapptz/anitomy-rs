@@ -2801,5 +2801,17 @@
             "episode": "01",
             "file_extension": "srt"
         }
+    },
+    {
+        "input": "[Koi-Raws] 2.5 Jigen no Ririsa - 01 「異次元の新入生」 (AT-X 1280x720 x264 AAC).ass",
+        "output": {
+            "title": "2.5 Jigen no Ririsa",
+            "episode": "01",
+            "episode_title": "異次元の新入生",
+            "video_resolution": "1280x720",
+            "video_term": "x264",
+            "audio_term": "AAC",
+            "file_extension": "ass"
+        }
     }
 ]

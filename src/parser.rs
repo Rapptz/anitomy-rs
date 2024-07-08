@@ -666,20 +666,6 @@ fn parse_episode<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>, k
         }
     }
 
-    // Fractional episode (e.g. `07.5`)
-    for token in tokens.iter_mut().filter(|t| t.is_free()) {
-        if let Some((first, second)) = token.value.split_once('.') {
-            // We don't allow any fractional part other than `.5`, because there are cases
-            // where such a number is a part of the title (e.g. `Evangelion: 1.11`,
-            // `Tokyo Magnitude 8.0`) or a keyword (e.g. `5.1`).
-            if second == "5" && is_valid_episode_number(first) {
-                token.mark_known();
-                results.push(Element::new(kind, token));
-                return;
-            }
-        }
-    }
-
     // Number sign, e.g. #01 or #02-03v2
     for token in tokens.iter_mut().filter(|t| t.is_free()) {
         if let Some(captures) = number_sign_episode_regex().captures(token.value) {
@@ -803,6 +789,20 @@ fn parse_episode<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>, k
                 token.mark_known();
                 results.push(Element::new(kind, token));
                 tokens[index].mark_known();
+                return;
+            }
+        }
+    }
+
+    // Fractional episode (e.g. `07.5`)
+    for token in tokens.iter_mut().filter(|t| t.is_free()) {
+        if let Some((first, second)) = token.value.split_once('.') {
+            // We don't allow any fractional part other than `.5`, because there are cases
+            // where such a number is a part of the title (e.g. `Evangelion: 1.11`,
+            // `Tokyo Magnitude 8.0`) or a keyword (e.g. `5.1`).
+            if second == "5" && is_valid_episode_number(first) {
+                token.mark_known();
+                results.push(Element::new(kind, token));
                 return;
             }
         }
