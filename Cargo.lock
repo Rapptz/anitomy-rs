@@ -15,6 +15,7 @@ dependencies = [
 name = "anitomy"
 version = "0.1.0"
 dependencies = [
+ "anitomy",
  "phf",
  "regex",
  "serde",
