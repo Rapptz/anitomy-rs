@@ -170,6 +170,13 @@ fn is_year(s: &str) -> bool {
         .is_some_and(|x| (1950..=2050).contains(&x))
 }
 
+/// A range of two years, e.g. `2019-2020` or `1998~2000`.
+fn is_year_range(s: &str) -> bool {
+    s.split_once(['-', '~']).is_some_and(|(first, last)| {
+        first.len() == 4 && last.len() == 4 && is_year(first) && is_year(last)
+    })
+}
+
 fn is_month(s: &str) -> bool {
     s.parse::<u8>()
     .ok()
@@ -602,8 +609,18 @@ fn parse_episode<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>, k
     }
 
     // Multi-episode, (e.g. 01-02, 03-05v2)
+    // A range of years (e.g. `Tokyo 2019-2020 S01E03`) is part of the title more often than
+    // it is a range of episodes, so it is only used when no other pattern finds an episode.
+    let mut year_range = None;
     for index in 0..tokens.len() {
-        if tokens[index].is_free() && parse_multi_episode_range(tokens, index, results, kind) {
+        if !tokens[index].is_free() {
+            continue;
+        }
+        if is_year_range(tokens[index].value) {
+            year_range.get_or_insert(index);
+            continue;
+        }
+        if parse_multi_episode_range(tokens, index, results, kind) {
             return;
         }
     }
@@ -866,7 +883,12 @@ fn parse_episode<'a>(tokens: &mut [Token<'a>], results: &mut Vec<Element<'a>>, k
         let token = &mut tokens[index];
         token.mark_known();
         results.push(Element::new(kind, token));
-        break;
+        return;
+    }
+
+    // Range of years, when nothing else is an episode (e.g. `Show 1990-2000`)
+    if let Some(index) = year_range.filter(|_| is_regular_episode) {
+        parse_multi_episode_range(tokens, index, results, kind);
     }
 }
 

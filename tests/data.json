@@ -2829,5 +2829,52 @@
             "subtitles": "cc",
             "file_extension": "srt"
         }
+    },
+    {
+        "input": "テラスハウス_.Tokyo.2019-2020.S03E25.The.Girls.Can't.Do.It.WEBRip.Netflix.ja[cc].srt",
+        "notes": "The range of years is part of the title, not a range of episodes.",
+        "output": {
+            "season": "03",
+            "episode": "25",
+            "episode_title": "The Girls Can't Do It",
+            "source": [
+                "WEBRip",
+                "Netflix"
+            ],
+            "language": "ja",
+            "subtitles": "cc",
+            "file_extension": "srt"
+        }
+    },
+    {
+        "input": "Terrace.House.Tokyo.2019-2020.S03E05.Week29.About.Love.1080p",
+        "output": {
+            "title": "Terrace House Tokyo 2019-2020",
+            "season": "03",
+            "episode": "05",
+            "video_resolution": "1080p"
+        }
+    },
+    {
+        "input": "Terrace House Tokyo 2019-2020 Week 24 (720p NF Webrip x265 justy).mkv",
+        "output": {
+            "episode": "24",
+            "video_resolution": "720p",
+            "file_extension": "mkv"
+        }
+    },
+    {
+        "input": "[Group] Show Name 1998-2000 [1080p].mkv",
+        "notes": "Without another episode number, a range of years is still a range of episodes.",
+        "output": {
+            "release_group": "Group",
+            "title": "Show Name",
+            "episode": [
+                "1998",
+                "2000"
+            ],
+            "video_resolution": "1080p",
+            "file_extension": "mkv"
+        }
     }
 ]
